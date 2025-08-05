@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { 
   DollarSign, 
   TrendingUp, 
@@ -8,15 +8,22 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Zap,
-  Target
+  Target,
+  Calculator,
+  Upload
 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Tooltip } from 'recharts'
 import { useDemoStore } from '../store/demoStore'
 import { pageTransition, staggerContainer, staggerItem, cardHover, buttonPress } from '../utils/animations'
+import ImageUploadPanel from '../components/ImageUploadPanel'
+import QuickEstimateModal from '../components/QuickEstimateModal'
+import toast from 'react-hot-toast'
 
 const Dashboard = () => {
   const { isDemoMode, getDemoJobs, getDemoLeads } = useDemoStore()
   const [stats, setStats] = useState([])
+  const [showImageUpload, setShowImageUpload] = useState(false)
+  const [showQuickEstimate, setShowQuickEstimate] = useState(false)
 
   useEffect(() => {
     if (isDemoMode) {
@@ -80,6 +87,10 @@ const Dashboard = () => {
     { name: 'Referrals', value: 15, color: '#EF4444' }
   ]
 
+  const handleAnalysisComplete = (analysis) => {
+    toast.success('Damage analysis complete! Scroll down to see results.')
+  }
+
   return (
     <motion.div
       variants={pageTransition}
@@ -102,15 +113,75 @@ const Dashboard = () => {
             <p className="text-gray-400 mt-2">Welcome back, Ali. Here's your collision shop at a glance.</p>
           </div>
           
-          <motion.div
-            animate={{ rotate: [0, 360] }}
-            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-            className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl"
-          >
-            <Zap className="text-white" size={32} />
-          </motion.div>
+          <div className="flex items-center space-x-4">
+            {/* Quick Actions */}
+            <motion.button
+              {...buttonPress}
+              onClick={() => setShowImageUpload(!showImageUpload)}
+              className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-2 rounded-xl font-medium shadow-lg flex items-center space-x-2"
+            >
+              <Upload size={18} />
+              <span>AI Damage Analysis</span>
+            </motion.button>
+            
+            <motion.button
+              {...buttonPress}
+              onClick={() => setShowQuickEstimate(true)}
+              className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-xl font-medium shadow-lg flex items-center space-x-2"
+            >
+              <Calculator size={18} />
+              <span>Quick Estimate</span>
+            </motion.button>
+            
+            <motion.div
+              animate={{ rotate: [0, 360] }}
+              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+              className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl"
+            >
+              <Zap className="text-white" size={32} />
+            </motion.div>
+          </div>
         </div>
       </motion.div>
+
+      {/* AI Image Upload Panel */}
+      <AnimatePresence>
+        {showImageUpload && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-8"
+          >
+            <div className="bg-white/5 backdrop-blur-xl border border-white/20 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-white flex items-center space-x-3">
+                  <motion.div
+                    animate={{ rotate: [0, 360] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                    className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-600 rounded-full flex items-center justify-center"
+                  >
+                    <Zap className="text-white" size={16} />
+                  </motion.div>
+                  <span>AI Damage Estimator</span>
+                </h2>
+                <motion.button
+                  {...buttonPress}
+                  onClick={() => setShowImageUpload(false)}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  ✕
+                </motion.button>
+              </div>
+              
+              <ImageUploadPanel 
+                onAnalysisComplete={handleAnalysisComplete}
+                vehicleInfo={{ year: '2022', make: 'Honda', model: 'Civic' }}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Stats Grid */}
       <motion.div
@@ -354,6 +425,12 @@ const Dashboard = () => {
           </motion.div>
         </div>
       </motion.div>
+
+      {/* Quick Estimate Modal */}
+      <QuickEstimateModal 
+        isOpen={showQuickEstimate}
+        onClose={() => setShowQuickEstimate(false)}
+      />
     </motion.div>
   )
 }

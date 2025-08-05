@@ -8,14 +8,13 @@ import {
   MessageSquare,
   Calendar,
   Filter,
-  Search
+  Search,
+  Eye
 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell } from 'recharts'
 import { useDemoStore } from '../store/demoStore'
-import SuggestedNextStep from '../components/SuggestedNextStep'
-import ContextualTooltip from '../components/ContextualTooltip'
-import SmartActionHint from '../components/SmartActionHint'
-import { cardVariants, pulseVariants, shakeVariants } from '../utils/animationVariants'
+import LeadDetailPanel from '../components/LeadDetailPanel'
+import { pageTransition, cardHover, buttonPress } from '../utils/animations'
 import toast from 'react-hot-toast'
 
 const LeadTracker = () => {
@@ -23,6 +22,8 @@ const LeadTracker = () => {
   const [selectedSource, setSelectedSource] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [leads, setLeads] = useState([])
+  const [selectedLead, setSelectedLead] = useState(null)
+  const [showLeadPanel, setShowLeadPanel] = useState(false)
 
   useEffect(() => {
     if (isDemoMode) {
@@ -69,59 +70,54 @@ const LeadTracker = () => {
     return matchesSearch && matchesSource
   })
 
-  const overdueLeads = leads.filter(lead => isOverdue(lead.nextFollowUp))
-  const hotLeads = leads.filter(lead => lead.status === 'Hot')
+  const handleLeadClick = (lead) => {
+    setSelectedLead(lead)
+    setShowLeadPanel(true)
+  }
 
-  const suggestions = isDemoMode ? [
-    {
-      text: `Send quote reminder to ${overdueLeads.length} overdue leads`,
-      priority: "high",
-      action: () => toast.success("Bulk SMS reminders sent")
-    },
-    {
-      text: `Follow up with ${hotLeads.length} hot leads today`,
-      priority: "medium",
-      action: () => toast.success("Hot lead follow-ups scheduled")
-    },
-    {
-      text: "GMB leads converting 14% better than Google Ads",
-      priority: "low",
-      action: () => toast.success("Adjusting ad spend allocation")
+  const handleLeadUpdate = (leadId, updates) => {
+    setLeads(prev => prev.map(lead => 
+      lead.id === leadId ? { ...lead, ...updates } : lead
+    ))
+    
+    if (selectedLead && selectedLead.id === leadId) {
+      setSelectedLead(prev => ({ ...prev, ...updates }))
     }
-  ] : []
+  }
 
   return (
-    <div className="p-6 space-y-6">
+    <motion.div
+      variants={pageTransition}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6"
+    >
       {/* Header */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between"
+        className="flex items-center justify-between mb-8"
       >
         <div>
-          <h1 className="text-3xl font-bold neon-text">Lead Conversion Tracker</h1>
-          <p className="text-dark-muted">Track conversion rates and manage follow-ups</p>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+            Lead Conversion Tracker
+          </h1>
+          <p className="text-gray-400">Track conversion rates and manage follow-ups</p>
         </div>
         <div className="flex items-center space-x-2">
-          <TrendingUp className="text-neon-green" size={24} />
-          <span className="text-neon-green font-semibold">CONVERSION TRACKING</span>
+          <TrendingUp className="text-green-400" size={24} />
+          <span className="text-green-400 font-semibold">CONVERSION TRACKING</span>
         </div>
       </motion.div>
 
-      {/* AI Suggested Next Steps */}
-      <SuggestedNextStep 
-        suggestions={suggestions}
-        onAction={(suggestion) => suggestion.action()}
-      />
-
       {/* Conversion Stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Conversion Chart */}
         <motion.div 
-          variants={cardVariants}
-          initial="hidden"
-          animate="visible"
-          className="card"
+          variants={cardHover}
+          whileHover="hover"
+          className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-xl"
         >
           <h3 className="text-lg font-semibold mb-4 text-white">Conversion by Source</h3>
           <div className="h-64">
@@ -131,12 +127,12 @@ const LeadTracker = () => {
                   dataKey="source" 
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#888888', fontSize: 12 }}
+                  tick={{ fill: '#9CA3AF', fontSize: 12 }}
                 />
                 <YAxis 
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#888888', fontSize: 12 }}
+                  tick={{ fill: '#9CA3AF', fontSize: 12 }}
                 />
                 <Bar dataKey="rate" radius={[4, 4, 0, 0]}>
                   {conversionData.map((entry, index) => (
@@ -150,11 +146,9 @@ const LeadTracker = () => {
 
         {/* Source Breakdown */}
         <motion.div 
-          variants={cardVariants}
-          initial="hidden"
-          animate="visible"
-          custom={1}
-          className="card"
+          variants={cardHover}
+          whileHover="hover"
+          className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-xl"
         >
           <h3 className="text-lg font-semibold mb-4 text-white">Lead Sources</h3>
           <div className="space-y-4">
@@ -176,7 +170,7 @@ const LeadTracker = () => {
                 </div>
                 <div className="text-right">
                   <p className="text-white font-semibold">{source.rate}%</p>
-                  <p className="text-dark-muted text-sm">{source.converted}/{source.leads}</p>
+                  <p className="text-gray-400 text-sm">{source.converted}/{source.leads}</p>
                 </div>
               </motion.div>
             ))}
@@ -186,11 +180,9 @@ const LeadTracker = () => {
 
       {/* Lead Management */}
       <motion.div 
-        variants={cardVariants}
-        initial="hidden"
-        animate="visible"
-        custom={2}
-        className="card"
+        variants={cardHover}
+        whileHover="hover"
+        className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-xl"
       >
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
           <h3 className="text-lg font-semibold text-white">Active Leads</h3>
@@ -198,24 +190,24 @@ const LeadTracker = () => {
           {/* Filters */}
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-dark-muted" size={16} />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
               <input
                 type="text"
                 placeholder="Search leads..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 bg-dark-bg/50 backdrop-blur-sm border border-dark-border rounded-lg text-white placeholder-dark-muted focus:border-neon-blue focus:outline-none"
+                className="pl-10 pr-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-gray-400 focus:border-blue-400 focus:outline-none transition-colors"
               />
             </div>
             
             <select
               value={selectedSource}
               onChange={(e) => setSelectedSource(e.target.value)}
-              className="bg-dark-bg/50 backdrop-blur-sm border border-dark-border rounded-lg px-4 py-2 text-white focus:border-neon-blue focus:outline-none"
+              className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-2 text-white focus:border-blue-400 focus:outline-none"
             >
-              <option value="all">All Sources</option>
+              <option value="all" className="bg-gray-800">All Sources</option>
               {Object.keys(sourceColors).map(source => (
-                <option key={source} value={source}>{source}</option>
+                <option key={source} value={source} className="bg-gray-800">{source}</option>
               ))}
             </select>
           </div>
@@ -228,147 +220,138 @@ const LeadTracker = () => {
             const isHot = lead.status === 'Hot'
             
             return (
-              <ContextualTooltip
+              <motion.div
                 key={lead.id}
-                content={`${lead.name} - ${lead.vehicle} - ${lead.issue}`}
-                actions={[
-                  {
-                    icon: MessageSquare,
-                    label: 'SMS',
-                    onClick: () => toast.success(`SMS sent to ${lead.name}`)
-                  },
-                  {
-                    icon: Phone,
-                    label: 'Call',
-                    onClick: () => toast.success(`Calling ${lead.name}`)
-                  }
-                ]}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                variants={cardHover}
+                whileHover="hover"
+                className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 cursor-pointer transition-all duration-200"
+                onClick={() => handleLeadClick(lead)}
               >
-                <motion.div
-                  custom={index}
-                  variants={cardVariants}
-                  initial="hidden"
-                  animate="visible"
-                  whileHover="hover"
-                  className="bg-dark-bg/50 backdrop-blur-sm p-4 rounded-lg hover:bg-opacity-80 transition-colors"
-                >
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between space-y-4 lg:space-y-0">
-                    {/* Lead Info */}
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center space-x-3">
-                        <span className="text-neon-blue font-mono font-semibold">{lead.id}</span>
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between space-y-4 lg:space-y-0">
+                  {/* Lead Info */}
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-blue-400 font-mono font-semibold">{lead.id}</span>
+                      <motion.span 
+                        className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(lead.status)}`}
+                        animate={isHot ? { scale: [1, 1.05, 1] } : {}}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        {lead.status}
+                      </motion.span>
+                      <span 
+                        className="px-2 py-1 rounded text-xs text-white"
+                        style={{ backgroundColor: sourceColors[lead.source] }}
+                      >
+                        {lead.source}
+                      </span>
+                      {leadIsOverdue && (
                         <motion.span 
-                          className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(lead.status)}`}
-                          variants={isHot ? pulseVariants : {}}
-                          animate={isHot ? 'pulse' : ''}
+                          animate={{ scale: [1, 1.1, 1] }}
+                          transition={{ duration: 1, repeat: Infinity }}
+                          className="px-2 py-1 rounded-full text-xs bg-red-500 text-white"
                         >
-                          {lead.status}
+                          OVERDUE
                         </motion.span>
-                        <span 
-                          className="px-2 py-1 rounded text-xs text-white"
-                          style={{ backgroundColor: sourceColors[lead.source] }}
-                        >
-                          {lead.source}
-                        </span>
-                        {leadIsOverdue && (
-                          <motion.span 
-                            variants={pulseVariants}
-                            animate="pulse"
-                            className="px-2 py-1 rounded-full text-xs bg-red-500 text-white"
-                          >
-                            OVERDUE
-                          </motion.span>
-                        )}
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <h4 className="text-lg font-semibold text-white">{lead.name}</h4>
-                          <div className="flex items-center space-x-4 text-dark-muted text-sm">
-                            <span className="flex items-center space-x-1">
-                              <Phone size={14} />
-                              <span>{lead.phone}</span>
-                            </span>
-                            <span className="flex items-center space-x-1">
-                              <Mail size={14} />
-                              <span>{lead.email}</span>
-                            </span>
-                          </div>
-                        </div>
-                        <div>
-                          <p className="text-white font-medium">{lead.vehicle}</p>
-                          <p className="text-dark-muted text-sm">{lead.issue}</p>
-                          <p className="text-dark-muted text-sm">{lead.notes}</p>
-                        </div>
-                      </div>
+                      )}
                     </div>
-
-                    {/* Lead Actions */}
-                    <div className="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-6">
-                      <div className="text-center lg:text-right">
-                        <p className="text-neon-green text-xl font-bold">${lead.estimatedValue.toLocaleString()}</p>
-                        <p className="text-dark-muted text-sm">Est. Value</p>
-                      </div>
-                      
-                      <div className="text-center lg:text-right">
-                        <div className="flex items-center justify-center lg:justify-end space-x-1">
-                          <Calendar size={16} className="text-dark-muted" />
-                          <p className={`${leadIsOverdue ? 'text-red-400 font-semibold' : 'text-white'}`}>
-                            {new Date(lead.nextFollowUp).toLocaleDateString()}
-                          </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="text-lg font-semibold text-white">{lead.name}</h4>
+                        <div className="flex items-center space-x-4 text-gray-400 text-sm">
+                          <span className="flex items-center space-x-1">
+                            <Phone size={14} />
+                            <span>{lead.phone}</span>
+                          </span>
+                          <span className="flex items-center space-x-1">
+                            <Mail size={14} />
+                            <span>{lead.email}</span>
+                          </span>
                         </div>
-                        <p className="text-dark-muted text-sm">Next Follow-up</p>
-                        <SmartActionHint 
-                          type="lastUpdate" 
-                          data={new Date(lead.lastContact).toLocaleDateString()} 
-                          className="mt-1"
-                        />
                       </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex space-x-2">
-                        <motion.button
-                          variants={leadIsOverdue ? shakeVariants : {}}
-                          animate={leadIsOverdue ? 'shake' : ''}
-                          className="btn-secondary text-sm px-3 py-2 flex items-center space-x-1"
-                          onClick={() => toast.success(`Calling ${lead.name}`)}
-                        >
-                          <Phone size={14} />
-                          <span>Call</span>
-                        </motion.button>
-                        
-                        <button 
-                          className="btn-secondary text-sm px-3 py-2 flex items-center space-x-1"
-                          onClick={() => toast.success(`SMS sent to ${lead.name}`)}
-                        >
-                          <MessageSquare size={14} />
-                          <span>SMS</span>
-                        </button>
-                        
-                        <button 
-                          className="btn-primary text-sm px-3 py-2"
-                          onClick={() => toast.success(`Lead ${lead.id} updated`)}
-                        >
-                          Update
-                        </button>
+                      <div>
+                        <p className="text-white font-medium">{lead.vehicle}</p>
+                        <p className="text-gray-400 text-sm">{lead.issue}</p>
+                        <p className="text-gray-400 text-sm">{lead.notes}</p>
                       </div>
                     </div>
                   </div>
 
-                  {/* AI Follow-up Suggestion */}
-                  {isHot && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      className="mt-4 p-3 bg-neon-green/10 backdrop-blur-sm border border-neon-green/30 rounded-lg"
-                    >
-                      <p className="text-neon-green text-sm font-medium">
-                        🤖 AI Suggestion: High conversion probability (87%). Send quote reminder SMS now.
-                      </p>
-                    </motion.div>
-                  )}
-                </motion.div>
-              </ContextualTooltip>
+                  {/* Lead Actions */}
+                  <div className="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-6">
+                    <div className="text-center lg:text-right">
+                      <p className="text-green-400 text-xl font-bold">${lead.estimatedValue.toLocaleString()}</p>
+                      <p className="text-gray-400 text-sm">Est. Value</p>
+                    </div>
+                    
+                    <div className="text-center lg:text-right">
+                      <div className="flex items-center justify-center lg:justify-end space-x-1">
+                        <Calendar size={16} className="text-gray-400" />
+                        <p className={`${leadIsOverdue ? 'text-red-400 font-semibold' : 'text-white'}`}>
+                          {new Date(lead.nextFollowUp).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <p className="text-gray-400 text-sm">Next Follow-up</p>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex space-x-2">
+                      <motion.button
+                        {...buttonPress}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toast.success(`Calling ${lead.name}`)
+                        }}
+                        className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 px-3 py-2 rounded-lg text-sm transition-colors flex items-center space-x-1"
+                      >
+                        <Phone size={14} />
+                        <span>Call</span>
+                      </motion.button>
+                      
+                      <motion.button
+                        {...buttonPress}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toast.success(`SMS sent to ${lead.name}`)
+                        }}
+                        className="bg-green-500/20 hover:bg-green-500/30 text-green-400 px-3 py-2 rounded-lg text-sm transition-colors flex items-center space-x-1"
+                      >
+                        <MessageSquare size={14} />
+                        <span>SMS</span>
+                      </motion.button>
+                      
+                      <motion.button
+                        {...buttonPress}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleLeadClick(lead)
+                        }}
+                        className="bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 px-3 py-2 rounded-lg text-sm transition-colors flex items-center space-x-1"
+                      >
+                        <Eye size={14} />
+                        <span>Details</span>
+                      </motion.button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* AI Follow-up Suggestion */}
+                {isHot && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="mt-4 p-3 bg-green-500/10 backdrop-blur-sm border border-green-500/30 rounded-lg"
+                  >
+                    <p className="text-green-400 text-sm font-medium">
+                      🤖 AI Suggestion: High conversion probability (87%). Send quote reminder SMS now.
+                    </p>
+                  </motion.div>
+                )}
+              </motion.div>
             )
           })}
         </div>
@@ -379,15 +362,23 @@ const LeadTracker = () => {
             animate={{ opacity: 1 }}
             className="text-center py-12"
           >
-            <Users className="mx-auto mb-4 text-dark-muted" size={48} />
-            <p className="text-dark-muted text-lg">No leads found</p>
+            <Users className="mx-auto mb-4 text-gray-400" size={48} />
+            <p className="text-gray-400 text-lg">No leads found</p>
             {leads.length === 0 && (
-              <p className="text-dark-muted text-sm">Enable demo mode to see sample data</p>
+              <p className="text-gray-400 text-sm">Enable demo mode to see sample data</p>
             )}
           </motion.div>
         )}
       </motion.div>
-    </div>
+
+      {/* Lead Detail Panel */}
+      <LeadDetailPanel
+        lead={selectedLead}
+        isOpen={showLeadPanel}
+        onClose={() => setShowLeadPanel(false)}
+        onUpdate={handleLeadUpdate}
+      />
+    </motion.div>
   )
 }
 
