@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { 
   Search, 
@@ -7,67 +7,27 @@ import {
   Clock, 
   AlertTriangle,
   CheckCircle,
-  Calendar
+  Calendar,
+  Phone,
+  MessageSquare
 } from 'lucide-react'
+import { useDemoStore } from '../store/demoStore'
+import ActionButton from '../components/ActionButton'
+import toast from 'react-hot-toast'
 
 const JobPipeline = () => {
+  const { isDemoMode, getDemoJobs } = useDemoStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('all')
+  const [jobs, setJobs] = useState([])
 
-  const jobs = [
-    {
-      id: '#CC-2024-001',
-      customer: 'Jessica Martinez',
-      phone: '(215) 555-0123',
-      vehicle: '2022 Honda Civic',
-      issue: 'Rear bumper repair + paint',
-      status: 'In Progress',
-      value: '$2,450',
-      estimator: 'Ali Sheikh',
-      dueDate: '2024-01-15',
-      priority: 'high',
-      notes: 'Customer wants OEM parts only'
-    },
-    {
-      id: '#CC-2024-002',
-      customer: 'Mike Johnson',
-      phone: '(215) 555-0124',
-      vehicle: '2021 Toyota Camry',
-      issue: 'Front door dent removal',
-      status: 'Scheduled',
-      value: '$1,850',
-      estimator: 'Ali Sheikh',
-      dueDate: '2024-01-16',
-      priority: 'medium',
-      notes: 'Insurance claim - State Farm'
-    },
-    {
-      id: '#CC-2024-003',
-      customer: 'Sarah Wilson',
-      phone: '(215) 555-0125',
-      vehicle: '2020 BMW 3 Series',
-      issue: 'Full front end collision',
-      status: 'Estimate',
-      value: '$3,200',
-      estimator: 'Ali Sheikh',
-      dueDate: '2024-01-14',
-      priority: 'high',
-      notes: 'Waiting for adjuster approval'
-    },
-    {
-      id: '#CC-2024-004',
-      customer: 'David Brown',
-      phone: '(215) 555-0126',
-      vehicle: '2019 Ford F-150',
-      issue: 'Bed liner + tailgate paint',
-      status: 'Delivered',
-      value: '$1,200',
-      estimator: 'Ali Sheikh',
-      dueDate: '2024-01-13',
-      priority: 'low',
-      notes: 'Customer pickup scheduled'
+  useEffect(() => {
+    if (isDemoMode) {
+      setJobs(getDemoJobs())
+    } else {
+      setJobs([])
     }
-  ]
+  }, [isDemoMode, getDemoJobs])
 
   const statuses = ['all', 'Estimate', 'Scheduled', 'In Progress', 'Delivered']
 
@@ -90,6 +50,10 @@ const JobPipeline = () => {
     }
   }
 
+  const isOverdue = (dueDate, status) => {
+    return status !== 'Delivered' && new Date(dueDate) < new Date()
+  }
+
   const filteredJobs = jobs.filter(job => {
     const matchesSearch = job.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          job.phone.includes(searchTerm) ||
@@ -97,6 +61,18 @@ const JobPipeline = () => {
     const matchesStatus = selectedStatus === 'all' || job.status === selectedStatus
     return matchesSearch && matchesStatus
   })
+
+  const handleCall = (customer, phone) => {
+    toast.success(`Calling ${customer} at ${phone}`)
+  }
+
+  const handleSMS = (customer, phone) => {
+    toast.success(`SMS sent to ${customer}`)
+  }
+
+  const handleUpdate = (jobId) => {
+    toast.success(`Job ${jobId} updated`)
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -106,10 +82,13 @@ const JobPipeline = () => {
           <h1 className="text-3xl font-bold neon-text">Job Pipeline</h1>
           <p className="text-dark-muted">Track and manage all collision repair jobs</p>
         </div>
-        <button className="btn-primary flex items-center space-x-2">
-          <Plus size={20} />
-          <span>New Job</span>
-        </button>
+        <ActionButton
+          icon={Plus}
+          onClick={() => toast.success('New job form opened')}
+          successMessage="New job created"
+        >
+          New Job
+        </ActionButton>
       </div>
 
       {/* Filters */}
@@ -161,6 +140,11 @@ const JobPipeline = () => {
                   <span className={`text-xs font-medium ${getPriorityColor(job.priority)}`}>
                     {job.priority.toUpperCase()} PRIORITY
                   </span>
+                  {isOverdue(job.dueDate, job.status) && (
+                    <span className="px-2 py-1 rounded-full text-xs bg-red-500 text-white animate-pulse">
+                      OVERDUE
+                    </span>
+                  )}
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -186,7 +170,9 @@ const JobPipeline = () => {
                 <div className="text-center lg:text-right">
                   <div className="flex items-center justify-center lg:justify-end space-x-1">
                     <Calendar size={16} className="text-dark-muted" />
-                    <p className="text-white">{new Date(job.dueDate).toLocaleDateString()}</p>
+                    <p className={`${isOverdue(job.dueDate, job.status) ? 'text-red-400 font-semibold' : 'text-white'}`}>
+                      {new Date(job.dueDate).toLocaleDateString()}
+                    </p>
                   </div>
                   <p className="text-dark-muted text-sm">Due Date</p>
                 </div>
@@ -198,26 +184,46 @@ const JobPipeline = () => {
 
                 {/* Actions */}
                 <div className="flex space-x-2">
-                  <button className="btn-secondary text-sm px-3 py-2">
-                    View
-                  </button>
-                  <button className="btn-primary text-sm px-3 py-2">
+                  <ActionButton
+                    variant="secondary"
+                    size="sm"
+                    icon={Phone}
+                    onClick={() => handleCall(job.customer, job.phone)}
+                  >
+                    Call
+                  </ActionButton>
+                  <ActionButton
+                    variant="secondary"
+                    size="sm"
+                    icon={MessageSquare}
+                    onClick={() => handleSMS(job.customer, job.phone)}
+                  >
+                    SMS
+                  </ActionButton>
+                  <ActionButton
+                    size="sm"
+                    onClick={() => handleUpdate(job.id)}
+                  >
                     Update
-                  </button>
+                  </ActionButton>
                 </div>
               </div>
             </div>
 
             {/* Smart Suggestions */}
-            {job.status === 'In Progress' && (
-              <div className="mt-4 p-3 bg-yellow-500 bg-opacity-10 border border-yellow-500 rounded-lg">
+            {job.status === 'In Progress' && isOverdue(job.dueDate, job.status) && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="mt-4 p-3 bg-yellow-500 bg-opacity-10 border border-yellow-500 rounded-lg"
+              >
                 <div className="flex items-center space-x-2">
                   <AlertTriangle className="text-yellow-400" size={16} />
                   <p className="text-yellow-400 text-sm font-medium">
-                    AI Suggestion: Job overdue by 1 day. Consider contacting parts supplier.
+                    🤖 AI Suggestion: Job overdue by {Math.ceil((new Date() - new Date(job.dueDate)) / (1000 * 60 * 60 * 24))} day(s). Consider contacting parts supplier or customer.
                   </p>
                 </div>
-              </div>
+              </motion.div>
             )}
           </motion.div>
         ))}
@@ -225,7 +231,13 @@ const JobPipeline = () => {
 
       {filteredJobs.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-dark-muted text-lg">No jobs found matching your criteria</p>
+          <CheckCircle className="mx-auto mb-4 text-dark-muted" size={48} />
+          <p className="text-dark-muted text-lg">
+            {jobs.length === 0 ? 'No jobs available' : 'No jobs found matching your criteria'}
+          </p>
+          {jobs.length === 0 && (
+            <p className="text-dark-muted text-sm">Enable demo mode to see sample data</p>
+          )}
         </div>
       )}
     </div>
