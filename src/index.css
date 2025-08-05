@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    background-color: #0A0A0A;
+    color: #E0E0E0;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-dark-card border border-dark-border rounded-lg p-6 shadow-lg;
+  }
+  
+  .card-hover {
+    @apply card transition-all duration-300 hover:border-neon-blue hover:shadow-neon-blue;
+  }
+  
+  .btn-primary {
+    @apply bg-neon-blue text-dark-bg px-4 py-2 rounded-lg font-semibold hover:bg-opacity-80 transition-all duration-200;
+  }
+  
+  .btn-secondary {
+    @apply bg-dark-card border border-neon-green text-neon-green px-4 py-2 rounded-lg font-semibold hover:bg-neon-green hover:text-dark-bg transition-all duration-200;
+  }
+  
+  .status-estimate {
+    @apply bg-yellow-500 bg-opacity-20 text-yellow-400 border border-yellow-500;
+  }
+  
+  .status-scheduled {
+    @apply bg-blue-500 bg-opacity-20 text-blue-400 border border-blue-500;
+  }
+  
+  .status-progress {
+    @apply bg-orange-500 bg-opacity-20 text-orange-400 border border-orange-500;
+  }
+  
+  .status-delivered {
+    @apply bg-green-500 bg-opacity-20 text-green-400 border border-green-500;
+  }
+  
+  .neon-text {
+    @apply text-neon-blue;
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+  }
+  
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #333333 #1A1A1A;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: #1A1A1A;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #333333;
+    border-radius: 3px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #555555;
+  }
+}
