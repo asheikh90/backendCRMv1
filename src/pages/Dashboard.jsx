@@ -14,7 +14,10 @@ import StatsCard from '../components/StatsCard'
 import QuickActions from '../components/QuickActions'
 import RecentActivity from '../components/RecentActivity'
 import PipelineOverview from '../components/PipelineOverview'
+import SuggestedNextStep from '../components/SuggestedNextStep'
 import { useDemoStore } from '../store/demoStore'
+import { cardVariants } from '../utils/animationVariants'
+import toast from 'react-hot-toast'
 
 const Dashboard = () => {
   const { isDemoMode, getDemoJobs, getDemoLeads } = useDemoStore()
@@ -27,7 +30,6 @@ const Dashboard = () => {
       
       const activeJobs = jobs.filter(job => job.status !== 'Delivered').length
       const pendingQuotes = leads.filter(lead => lead.status === 'Warm' || lead.status === 'Cold').length
-      const totalRevenue = jobs.reduce((sum, job) => sum + parseInt(job.value.replace(/[$,]/g, '')), 0)
       const hotLeads = leads.filter(lead => lead.status === 'Hot').length
       const totalLeads = leads.length
       const conversionRate = totalLeads > 0 ? Math.round((hotLeads / totalLeads) * 100) : 0
@@ -63,7 +65,6 @@ const Dashboard = () => {
         }
       ])
     } else {
-      // Default stats for non-demo mode
       setStats([
         {
           title: 'Today\'s Revenue',
@@ -97,28 +98,65 @@ const Dashboard = () => {
     }
   }, [isDemoMode, getDemoJobs, getDemoLeads])
 
+  const suggestions = isDemoMode ? [
+    {
+      text: "Follow up on 2 overdue jobs (BMW & Camry)",
+      priority: "high",
+      action: () => toast.success("Navigating to overdue jobs")
+    },
+    {
+      text: "Send quote reminder to Mike Johnson",
+      priority: "medium",
+      action: () => toast.success("SMS reminder sent to Mike")
+    },
+    {
+      text: "Upload missing photos for 3 completed jobs",
+      priority: "low",
+      action: () => toast.success("Opening Visual Proof Engine")
+    }
+  ] : []
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-between"
+      >
         <div>
           <h1 className="text-3xl font-bold neon-text">Command Center</h1>
           <p className="text-dark-muted">Welcome back, Ali. Here's what's happening today.</p>
         </div>
         <div className="text-right">
           <p className="text-sm text-dark-muted">Last updated</p>
-          <p className="text-neon-blue font-mono">{new Date().toLocaleTimeString()}</p>
+          <motion.p 
+            key={new Date().toLocaleTimeString()}
+            initial={{ scale: 1.1, color: '#00D4FF' }}
+            animate={{ scale: 1, color: '#E0E0E0' }}
+            className="font-mono"
+          >
+            {new Date().toLocaleTimeString()}
+          </motion.p>
         </div>
-      </div>
+      </motion.div>
+
+      {/* AI Suggested Next Steps */}
+      <SuggestedNextStep 
+        suggestions={suggestions}
+        onAction={(suggestion) => suggestion.action()}
+      />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
           <motion.div
             key={stat.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
+            custom={index}
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            whileHover="hover"
           >
             <StatsCard {...stat} />
           </motion.div>
@@ -128,18 +166,36 @@ const Dashboard = () => {
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Pipeline Overview */}
-        <div className="lg:col-span-2">
+        <motion.div 
+          className="lg:col-span-2"
+          variants={cardVariants}
+          initial="hidden"
+          animate="visible"
+          custom={4}
+        >
           <PipelineOverview />
-        </div>
+        </motion.div>
 
         {/* Quick Actions */}
-        <div>
+        <motion.div
+          variants={cardVariants}
+          initial="hidden"
+          animate="visible"
+          custom={5}
+        >
           <QuickActions />
-        </div>
+        </motion.div>
       </div>
 
       {/* Recent Activity */}
-      <RecentActivity />
+      <motion.div
+        variants={cardVariants}
+        initial="hidden"
+        animate="visible"
+        custom={6}
+      >
+        <RecentActivity />
+      </motion.div>
     </div>
   )
 }

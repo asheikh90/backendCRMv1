@@ -13,6 +13,8 @@ import OperatorRadar from './pages/OperatorRadar'
 import AskForge from './components/AskForge'
 import DemoToggle from './components/DemoToggle'
 import LiveSignals from './components/LiveSignals'
+import AgentStatus from './components/AgentStatus'
+import AgentOverlay from './components/AgentOverlay'
 import PageTransition from './components/PageTransition'
 import { useDemoStore } from './store/demoStore'
 import { useUIStore } from './store/uiStore'
@@ -64,17 +66,22 @@ function App() {
         }`}>
           {/* Demo Mode Banner */}
           {isDemoMode && (
-            <div className="bg-neon-blue bg-opacity-20 border-b border-neon-blue px-4 py-2">
+            <div className="bg-neon-blue/10 backdrop-blur-sm border-b border-neon-blue/30 px-4 py-2">
               <p className="text-neon-blue text-sm font-medium text-center">
                 🎯 You are viewing Collision Club in Demo Mode
               </p>
             </div>
           )}
 
+          {/* Agent Status */}
+          <AgentStatus />
+
           {/* Live Signals */}
           <LiveSignals />
           
-          <AnimatedRoutes />
+          <div className="pt-16">
+            <AnimatedRoutes />
+          </div>
         </main>
 
         {/* Demo Toggle */}
@@ -83,14 +90,18 @@ function App() {
         {/* Ask Forge AI Assistant */}
         <AskForge />
 
+        {/* Agent Overlay */}
+        <AgentOverlay />
+
         {/* Toast Notifications */}
         <Toaster
           position="top-right"
           toastOptions={{
             style: {
-              background: '#1A1A1A',
+              background: 'rgba(26, 26, 26, 0.9)',
+              backdropFilter: 'blur(10px)',
               color: '#E0E0E0',
-              border: '1px solid #333333',
+              border: '1px solid rgba(0, 212, 255, 0.3)',
             },
           }}
         />
