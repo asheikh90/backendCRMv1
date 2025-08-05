@@ -10,148 +10,219 @@ import {
   Trophy, 
   Radar,
   Menu,
-  X
+  X,
+  Zap
 } from 'lucide-react'
-import { useDemoStore } from '../store/demoStore'
+import { buttonPress, slideIn } from '../utils/animations'
+import { useThemeStore } from '../store/themeStore'
 
-const Sidebar = ({ collapsed, onToggle }) => {
+const Sidebar = () => {
   const location = useLocation()
-  const { isDemoMode, getDemoLeads, getDemoJobs } = useDemoStore()
-  const [hoveredItem, setHoveredItem] = useState(null)
-
-  const getPreviewData = (path) => {
-    if (!isDemoMode) return null
-
-    switch (path) {
-      case '/pipeline':
-        const jobs = getDemoJobs()
-        const activeJobs = jobs.filter(job => job.status === 'In Progress').length
-        return `${activeJobs} active jobs`
-      
-      case '/leads':
-        const leads = getDemoLeads()
-        const hotLeads = leads.filter(lead => lead.status === 'Hot').length
-        const overdueLeads = leads.filter(lead => new Date(lead.nextFollowUp) < new Date()).length
-        return overdueLeads > 0 ? `${overdueLeads} overdue follow-ups` : `${hotLeads} hot leads`
-      
-      case '/quotes':
-        return '2 quotes pending'
-      
-      case '/proof':
-        return '3 photos needed'
-      
-      case '/estimators':
-        return 'Ali leading 69.2%'
-      
-      case '/radar':
-        return '6 action items'
-      
-      default:
-        return 'Live dashboard'
-    }
-  }
+  const [isCollapsed, setIsCollapsed] = useState(false)
+  const { getCurrentColors } = useThemeStore()
+  const colors = getCurrentColors()
 
   const menuItems = [
-    { path: '/', icon: LayoutDashboard, label: 'Dashboard', color: 'neon-blue' },
-    { path: '/pipeline', icon: GitBranch, label: 'Job Pipeline', color: 'neon-green' },
-    { path: '/quotes', icon: Calculator, label: 'AI Quote Engine', color: 'yellow-400' },
-    { path: '/proof', icon: Camera, label: 'Visual Proof', color: 'purple-400' },
-    { path: '/leads', icon: Users, label: 'Lead Tracker', color: 'pink-400' },
-    { path: '/estimators', icon: Trophy, label: 'Estimators', color: 'orange-400' },
-    { path: '/radar', icon: Radar, label: 'Operator Radar', color: 'red-400' },
+    { 
+      path: '/', 
+      icon: LayoutDashboard, 
+      label: 'Command Center', 
+      gradient: 'from-blue-500 to-blue-600',
+      description: 'Overview & insights'
+    },
+    { 
+      path: '/pipeline', 
+      icon: GitBranch, 
+      label: 'Job Pipeline', 
+      gradient: 'from-green-500 to-green-600',
+      description: 'Drag & drop workflow'
+    },
+    { 
+      path: '/quotes', 
+      icon: Calculator, 
+      label: 'AI Quote Engine', 
+      gradient: 'from-purple-500 to-purple-600',
+      description: 'Smart pricing'
+    },
+    { 
+      path: '/proof', 
+      icon: Camera, 
+      label: 'Visual Proof', 
+      gradient: 'from-orange-500 to-orange-600',
+      description: 'Before/after gallery'
+    },
+    { 
+      path: '/leads', 
+      icon: Users, 
+      label: 'Lead Tracker', 
+      gradient: 'from-pink-500 to-pink-600',
+      description: 'Conversion pipeline'
+    },
+    { 
+      path: '/estimators', 
+      icon: Trophy, 
+      label: 'Estimators', 
+      gradient: 'from-yellow-500 to-yellow-600',
+      description: 'Performance leaderboard'
+    },
+    { 
+      path: '/radar', 
+      icon: Radar, 
+      label: 'Operator Radar', 
+      gradient: 'from-red-500 to-red-600',
+      description: 'Live monitoring'
+    },
   ]
 
   return (
-    <div className={`fixed left-0 top-0 h-full bg-dark-card border-r border-dark-border transition-all duration-300 z-50 ${
-      collapsed ? 'w-16' : 'w-64'
-    }`}>
+    <motion.div
+      initial={{ x: -300 }}
+      animate={{ x: 0 }}
+      className={`fixed left-0 top-0 h-full bg-white/10 backdrop-blur-xl border-r border-white/20 transition-all duration-300 z-50 ${
+        isCollapsed ? 'w-20' : 'w-64'
+      }`}
+      style={{
+        boxShadow: "0 0 50px rgba(0, 0, 0, 0.1)"
+      }}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-dark-border">
-        {!collapsed && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+      <div className="p-6 border-b border-white/20">
+        <div className="flex items-center justify-between">
+          <AnimatePresence>
+            {!isCollapsed && (
+              <motion.div
+                variants={slideIn}
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+              >
+                <div className="flex items-center space-x-3">
+                  <motion.div
+                    animate={{ rotate: [0, 360] }}
+                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                    className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center"
+                  >
+                    <Zap className="text-white" size={20} />
+                  </motion.div>
+                  <div>
+                    <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                      COLLISION
+                    </h1>
+                    <p className="text-xs text-gray-400">Command Center v4.0</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
+          <motion.button
+            {...buttonPress}
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
           >
-            <h1 className="text-xl font-bold neon-text">COLLISION</h1>
-            <p className="text-xs text-dark-muted">COMMAND CENTER v3+</p>
-          </motion.div>
-        )}
-        <button
-          onClick={onToggle}
-          className="p-2 rounded-lg hover:bg-dark-bg transition-colors"
-        >
-          {collapsed ? <Menu size={20} /> : <X size={20} />}
-        </button>
+            {isCollapsed ? <Menu size={20} className="text-gray-400" /> : <X size={20} className="text-gray-400" />}
+          </motion.button>
+        </div>
       </div>
 
       {/* Navigation */}
       <nav className="p-4 space-y-2">
-        {menuItems.map((item) => {
+        {menuItems.map((item, index) => {
           const isActive = location.pathname === item.path
           const Icon = item.icon
-          const previewData = getPreviewData(item.path)
           
           return (
-            <div key={item.path} className="relative">
+            <motion.div
+              key={item.path}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
               <Link
                 to={item.path}
-                onMouseEnter={() => setHoveredItem(item.path)}
-                onMouseLeave={() => setHoveredItem(null)}
-                className={`flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 group relative ${
-                  isActive 
-                    ? `bg-${item.color} bg-opacity-20 text-${item.color} border border-${item.color}` 
-                    : 'hover:bg-dark-bg text-dark-text hover:text-white'
-                }`}
+                className="group relative block"
               >
-                <Icon 
-                  size={20} 
-                  className={isActive ? `text-${item.color}` : 'group-hover:text-neon-blue'} 
-                />
-                {!collapsed && (
-                  <span className="font-medium">{item.label}</span>
-                )}
-              </Link>
+                <motion.div
+                  {...buttonPress}
+                  className={`flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 relative overflow-hidden ${
+                    isActive 
+                      ? `bg-gradient-to-r ${item.gradient} text-white shadow-lg` 
+                      : 'hover:bg-white/10 text-gray-300 hover:text-white'
+                  }`}
+                >
+                  {/* Background glow for active item */}
+                  {isActive && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent rounded-xl"
+                    />
+                  )}
+                  
+                  <Icon size={20} className="relative z-10" />
+                  
+                  <AnimatePresence>
+                    {!isCollapsed && (
+                      <motion.div
+                        variants={slideIn}
+                        initial="hidden"
+                        animate="visible"
+                        exit="hidden"
+                        className="relative z-10"
+                      >
+                        <p className="font-medium">{item.label}</p>
+                        <p className="text-xs opacity-75">{item.description}</p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
 
-              {/* Tooltip with Preview */}
-              <AnimatePresence>
-                {collapsed && hoveredItem === item.path && (
+                {/* Tooltip for collapsed state */}
+                {isCollapsed && (
                   <motion.div
                     initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    className="absolute left-full top-0 ml-2 bg-dark-bg border border-neon-blue rounded-lg px-3 py-2 whitespace-nowrap z-50"
+                    whileHover={{ opacity: 1, x: 0 }}
+                    className="absolute left-full top-0 ml-4 bg-gray-900/90 backdrop-blur-sm text-white px-3 py-2 rounded-lg whitespace-nowrap pointer-events-none z-50"
                   >
-                    <p className="text-white font-medium">{item.label}</p>
-                    {previewData && (
-                      <p className="text-neon-blue text-xs">{previewData}</p>
-                    )}
+                    <p className="font-medium">{item.label}</p>
+                    <p className="text-xs text-gray-300">{item.description}</p>
                   </motion.div>
                 )}
-              </AnimatePresence>
-            </div>
+              </Link>
+            </motion.div>
           )
         })}
       </nav>
 
       {/* Footer */}
-      {!collapsed && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="absolute bottom-4 left-4 right-4"
-        >
-          <div className="text-xs text-dark-muted text-center">
-            <p>Operator: <span className="text-neon-green">Ali Sheikh</span></p>
-            <p>Collision Club Philly</p>
-            {isDemoMode && (
-              <p className="text-neon-blue mt-1">🎯 Demo Mode Active</p>
-            )}
-          </div>
-        </motion.div>
-      )}
-    </div>
+      <AnimatePresence>
+        {!isCollapsed && (
+          <motion.div
+            variants={slideIn}
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            className="absolute bottom-6 left-4 right-4"
+          >
+            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+              <div className="flex items-center space-x-3 mb-2">
+                <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">AS</span>
+                </div>
+                <div>
+                  <p className="text-white font-medium">Ali Sheikh</p>
+                  <p className="text-xs text-gray-400">Collision Club Philly</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2 text-xs text-gray-400">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                <span>System Online</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   )
 }
 
